@@ -1,16 +1,17 @@
 from datetime import datetime, timedelta, timezone
 from jose import jwt, JWTError
-from passlib.context import CryptContext
+import hashlib
 from fastapi import HTTPException, Depends, Header
 from .config import JWT_SECRET, JWT_ALGORITHM, JWT_EXPIRY_HOURS
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    import bcrypt
+    pw = password.encode('utf-8')[:72]
+    return bcrypt.hashpw(pw, bcrypt.gensalt()).decode('utf-8')
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    import bcrypt
+    return bcrypt.checkpw(plain.encode('utf-8')[:72], hashed.encode('utf-8'))
 
 def create_token(user_id: int, email: str) -> str:
     expire = datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRY_HOURS)
